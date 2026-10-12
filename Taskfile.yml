@@ -1,0 +1,120 @@
+version: '3'
+
+vars:
+  ENV_DIR: ./docker/
+  SERVICE: ros-autoware-utility
+  PROJECT: rosenv
+
+tasks:
+  _check-env:
+    internal: true
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    preconditions:
+      - sh: '[ "$RUNTIME_ENV" = "nvidia" ]'
+        msg: "RUNTIME_ENV is invalid."
+
+  _update-env:
+    internal: true
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    silent: true
+    cmds:
+      - "sed -i -e 's/UID=.*$/UID='$(id -u)'/g' .env"
+      - "sed -i -e 's/GID=.*$/GID='$(id -g)'/g' .env"
+
+  up-host:
+    desc: docker compose up host
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    env:
+      NETWORK_MODE: host
+    silent: true
+    cmds:
+      - "sed -i -e 's/NETWORK_MODE=.*$/NETWORK_MODE='${NETWORK_MODE}'/g' .env"
+      - task: _update-env
+      - task: _check-env
+      - task: _compose-up
+
+  up-bridge:
+    desc: docker compose up bridge
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    env:
+      NETWORK_MODE: bridge
+    silent: true
+    cmds:
+      - "sed -i -e 's/NETWORK_MODE=.*$/NETWORK_MODE='${NETWORK_MODE}'/g' .env"
+      - task: _update-env
+      - task: _check-env
+      - task: _compose-up
+
+  exec:
+    desc: docker compose exec
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    silent: true
+    cmds:
+      - task: _check-env
+      - task: _compose-exec
+
+  stop:
+    desc: docker compose stop
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    silent: true
+    cmds:
+      - task: _check-env
+      - task: _compose-stop
+
+  build:
+    desc: docker compose build
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    silent: true
+    cmds:
+      - task: _update-env
+      - task: _check-env
+      - task: _compose-build
+
+  _compose-up:
+    internal: true
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    silent: true
+    cmds:
+      - "PWD=$(pwd) docker compose -f compose.yml -f compose.${NETWORK_MODE}.yml -p {{.PROJECT}} up"
+      # - "PWD=$(pwd) docker compose -f compose.yml -f compose.${NETWORK_MODE}.yml -p {{.PROJECT}} up -d"
+
+  _compose-exec:
+    internal: true
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    silent: true
+    cmds:
+      - "PWD=$(pwd) docker compose -f compose.yml -f compose.${NETWORK_MODE}.yml  -p {{.PROJECT}} exec {{.SERVICE}} /bin/bash"
+
+  _compose-stop:
+    internal: true
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    silent: true
+    cmds:
+      - "PWD=$(pwd) docker compose -f compose.yml -f compose.${NETWORK_MODE}.yml  -p {{.PROJECT}} stop"
+
+  _compose-build:
+    internal: true
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    silent: true
+    cmds:
+      - "PWD=$(pwd) docker compose -f compose.yml -f compose.${NETWORK_MODE}.yml build"
+      # - "PWD=$(pwd) docker compose -f compose.yml -f compose.${NETWORK_MODE}.yml build --no-cache"
+
+  _compose-logs:
+    internal: true
+    dir: "{{.ENV_DIR}}"
+    dotenv: ['.env']
+    silent: true
+    cmds:
+      - "PWD=$(pwd) docker compose -f compose.yml -f compose.${NETWORK_MODE}.yml -p {{.PROJECT}} logs -f"
