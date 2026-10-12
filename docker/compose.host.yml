@@ -1,0 +1,5 @@
+
+services:
+
+  ros-autoware-utility:
+    network_mode: host

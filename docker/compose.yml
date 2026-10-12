@@ -1,0 +1,41 @@
+
+services:
+
+  ros-autoware-utility:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+      - UID=${UID}
+      - GID=${GID}
+      - USER_NAME=${USER_NAME}
+      - BUILD_WITH_CUDA=${BUILD_WITH_CUDA}
+    image: rosenv:ros-autoware-utility
+    container_name: ros-autoware-utility
+    # privileged: true
+    # security_opt:
+    # - apparmor:unconfined
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    #stdin_open: true
+    tty: true
+    devices:
+    - /dev/snd:/dev/snd
+    - /dev/dri:/dev/dri
+    env_file:
+    - .env
+    environment:
+    - DISPLAY=${DISPLAY}
+    - NVIDIA_VISIBLE_DEVICES=all
+    - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+    - /dev:/dev
+    - /tmp/.X11-unix:/tmp/.X11-unix
+    - ${PWD}/home:/home/${USER_NAME}/mnt
+    - ${PWD}/tmp:/home/${USER_NAME}/mnt/tmp
+    - ${PWD}/setup:/setup
