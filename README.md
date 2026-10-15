@@ -20,13 +20,16 @@
 
 本環境はAWSIMを動かすDocker環境である。  
 
+- [AWSIM](https://github.com/autowarefoundation/AWSIM)  
+- [AWSIM Document - Quick Start Demo](https://autowarefoundation.github.io/AWSIM/GettingStarted/QuickStartDemo/)  
+
 ## 2 動作環境
 
 - Ubuntu 22.04, 24.04
 - NVIDIA GPU
 - Docker
 - Docker Compose
-- Nvidia Docker
+- NVIDIA Container Toolkit
 
 ## 3 インストール
 
@@ -94,7 +97,7 @@ Task Runnerを使用する場合はホストPCに下記をインストールし�
     make build
     ```
 
-    ビルドに約??分ほどかかります(通信環境とPCスペックにより変動します)
+    ビルドに約70分ほどかかります(通信環境とPCスペックにより変動します)
 
 1. docker compose up
 
@@ -150,6 +153,13 @@ Task Runnerを使用する場合はホストPCに下記をインストールし�
 
 ## 5 使用方法
 
+- make up-bridge はコンテナ立ち上げ時に1回のみ実行する  
+- make exec はコンテナに入るときに実行する  
+- 複数ターミナルを立ち上げたい場合は make exec を別ターミナルで実行する  
+- ホストとのデータの共有は下記マウント済みの領域が使用できる  
+  ホストの「ros-autoware-utility/docker/home」を「/home/docker/mnt」にマウント  
+  ホストの「ros-autoware-utility/docker/tmp」を「/home/docker/mnt/tmp」にマウント  
+
 ### 5-1 セットアップ
 
 1. コンテナ立ち上げ
@@ -162,25 +172,35 @@ Task Runnerを使用する場合はホストPCに下記をインストールし�
 
     ```bash
     make exec
-    cd <path to AWSIM folder>
+    mkdir -p ~/mnt/AWSIM
+    cd ~/mnt/AWSIM/
     wget https://github.com/autowarefoundation/AWSIM/releases/download/v2.0.1/AWSIM-Demo.zip
-    unzip <path to AWSIM folder>/AWSIM-Demo.zip
-    chmod +x <path to AWSIM folder>/AWSIM-Demo/AWSIM-Demo.x86_64
+    unzip ./AWSIM-Demo.zip
+    chmod +x ./AWSIM-Demo/AWSIM-Demo.x86_64
+    ```
+
+1. MAPダウンロード
+
+    ```bash
+    make exec
+    mkdir -p ~/mnt/AWSIM/Map
+    cd ~/mnt/AWSIM/Map/
+    wget https://github.com/autowarefoundation/AWSIM/releases/download/v2.0.0/Shinjuku-Map.zip
+    unzip ./Shinjuku-Map.zip
     ```
 
 1. autowareビルド
 
-
     ```bash
     make exec
-    cd <path to Autoware folder>
+    cd ~/mnt/
     git clone -b 1.8.0 https://github.com/autowarefoundation/autoware.git
     cd autoware
     ```
 
     ```bash
     mkdir -p src
-    vcs import src < ./repositories/autoware.repos
+    vcs import --recursive src < ./repositories/autoware.repos
     ```
 
     ```bash
@@ -211,14 +231,14 @@ Task Runnerを使用する場合はホストPCに下記をインストールし�
 
     ```bash
     make exec
-    <path to AWSIM folder>/AWSIM-Demo/AWSIM-Demo.x86_64
+    ~/mnt/AWSIM/AWSIM-Demo/AWSIM-Demo.x86_64
     ```
 
 1. autoware立ち上げ
 
     ```bash
     make exec
-    source <path to Autoware folder>/autoware/install/local_setup.bash
+    source ~/mnt/autoware/install/local_setup.bash
     ros2 launch autoware_launch e2e_simulator.launch.xml vehicle_model:=sample_vehicle sensor_model:=awsim_sensor_kit map_path:=/home/docker/mnt/AWSIM/Map/Shinjuku-Map/map
     ```
 
